@@ -47,7 +47,7 @@ function Get-DbghelpSourceFilePaths {
     }
 
     try {
-        $null = [IndexHelpers.Dbghelp.NativeMethods]::SymSetOptions([IndexHelpers.Dbghelp.NativeMethods]::SymOptions.SYMOPT_NO_IMAGE_SEARCH)
+        $null = [IndexHelpers.Dbghelp.NativeMethods]::SymSetOptions([IndexHelpers.Dbghelp.SymOptions]::SYMOPT_NO_IMAGE_SEARCH)
         [uint64]$moduleBase = 0
 
         # Open the symbols file.
@@ -92,18 +92,18 @@ function Get-DbghelpSourceFilePaths {
             }
 
             # Read the module info. Validate the file has symbol information and is a pdb type.
-            $moduleInfo = New-Object IndexHelpers.Dbghelp.NativeMethods.IMAGEHLP_MODULE64
+            $moduleInfo = New-Object IndexHelpers.Dbghelp.IMAGEHLP_MODULE64
             $moduleInfo.SizeOfStruct = [uint32][System.Runtime.InteropServices.Marshal]::SizeOf($moduleInfo)
             if (![IndexHelpers.Dbghelp.NativeMethods]::SymGetModuleInfo64($processHandle, $moduleBase, [ref]$moduleInfo)) {
                 throw (New-IndexedSourcesNotRetrievedMessage -SymbolsFilePath $SymbolsFilePath -Message 'Symbol information could not be retrieved.')
-            } elseif ($moduleInfo.SymType -ne [IndexHelpers.Dbghelp.NativeMethods]::SymType.SymPdb) {
+            } elseif ($moduleInfo.SymType -ne [IndexHelpers.Dbghelp.SymType]::SymPdb) {
                 throw (New-IndexedSourcesNotRetrievedMessage -SymbolsFilePath $SymbolsFilePath -Message 'Symbol is not of type pdb.')
             }
 
             # Enumerate the indexed source files if the pdb file has source information.
             if ($moduleInfo.LineNumbers) {
                 $referencedSourceFiles = New-Object System.Collections.Generic.List[string]
-                if (![IndexHelpers.Dbghelp.NativeMethods]::SymEnumSourceFilesWrapper($processHandle, $moduleBase, [ref]$referencedSourceFiles)) {
+                if (![IndexHelpers.Dbghelp.NativeMethods]::SymEnumSourceFilesWrapper($processHandle, $moduleBase, $referencedSourceFiles)) {
                     throw (New-Win32ErrorMessage -Method 'SymEnumSourceFiles')
                 }
 
@@ -175,12 +175,13 @@ function Invoke-LoadLibrary {
 # Types.
 ########################################
 # If the type has already been loaded once, then it is not loaded again.
-Write-Verbose "Adding dbghelp native methods."
+Write-Verbose "Adding dbghelp native wrappers."
 Add-Type -Debug:$false -TypeDefinition @'
 namespace IndexHelpers.Dbghelp
 {
     using System;
     using System.Runtime.InteropServices;
+    using Microsoft.Win32.SafeHandles;
 
     public static class NativeMethods
     {
@@ -192,10 +193,6 @@ namespace IndexHelpers.Dbghelp
 
         [DllImport("dbghelp.dll", SetLastError = true, CharSet = CharSet.Unicode)]
         public static extern bool SymCleanup(IntPtr hProcess);
-
-        public delegate bool SymEnumSourceFilesProc(
-            ref SOURCEFILE pSourceFile,
-            IntPtr UserContext);
 
         [DllImport("dbghelp.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "SymEnumSourceFilesW")]
         public static extern bool SymEnumSourceFiles(
@@ -211,7 +208,7 @@ namespace IndexHelpers.Dbghelp
             System.Collections.Generic.List<string> referencedSourceFiles)
         {
             // Callback that processes the found source file from the pdb
-            NativeMethods.SymEnumSourceFilesProc enumSourceFilesCallBack = delegate(ref NativeMethods.SOURCEFILE pSourceFile, IntPtr UserContext)
+            SymEnumSourceFilesProc enumSourceFilesCallBack = delegate(ref SOURCEFILE pSourceFile, IntPtr UserContext)
             {
                 if (pSourceFile.FileName != IntPtr.Zero)
                 {
@@ -221,7 +218,7 @@ namespace IndexHelpers.Dbghelp
                 return true;
             };
 
-            return NativeMethods.SymEnumSourceFiles(hProcess, ModeBase, null, enumSourceFilesCallBack, IntPtr.Zero);
+            return SymEnumSourceFiles(hProcess, ModeBase, null, enumSourceFilesCallBack, IntPtr.Zero);
         }
 
         [DllImport("dbghelp.dll", SetLastError = true, CharSet = CharSet.Unicode, EntryPoint = "SymGetModuleInfoW64")]
@@ -260,6 +257,10 @@ namespace IndexHelpers.Dbghelp
             IntPtr hProcess,
             ulong BaseOfDll);
     }
+
+    public delegate bool SymEnumSourceFilesProc(
+        ref SOURCEFILE pSourceFile,
+        IntPtr UserContext);
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct IMAGEHLP_MODULE64

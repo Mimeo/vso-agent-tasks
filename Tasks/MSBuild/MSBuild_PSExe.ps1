@@ -10,7 +10,7 @@ try {
     [string]$Platform = Get-VstsInput -Name 'Platform'
     [string]$Configuration = Get-VstsInput -Name 'Configuration'
     [bool]$Clean = Get-VstsInput -Name 'Clean' -AsBool
-    [bool]$RestoreNuGetPackages = Get-VstsInput 'RestoreNuGetPackages' -AsBool
+    [bool]$RestoreNuGetPackages = Get-VstsInput -Name 'RestoreNuGetPackages' -AsBool
     [bool]$LogProjectEvents = Get-VstsInput -Name 'LogProjectEvents' -AsBool
     [string]$MSBuildVersion = Get-VstsInput -Name 'MSBuildVersion'
     [string]$MSBuildArchitecture = Get-VstsInput -Name 'MSBuildArchitecture'

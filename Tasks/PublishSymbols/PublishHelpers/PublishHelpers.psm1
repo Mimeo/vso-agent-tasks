@@ -1,15 +1,6 @@
 [CmdletBinding()]
 param()
 
-#. $PSScriptRoot\CommonWrapperFunctions.ps1
-#. $PSScriptRoot\DbghelpFunctions.ps1
-#. $PSScriptRoot\IndexFunctions.ps1
-#. $PSScriptRoot\PdbstrFunctions.ps1
-#. $PSScriptRoot\SourceFileFunctions.ps1
-#. $PSScriptRoot\SourceProviderFunctions.ps1
-#. $PSScriptRoot\SrcSrvIniContentFunctions.ps1
-Export-ModuleMember -Function 'Invoke-PublishSymbols'
-
 function Invoke-PublishSymbols {
     [CmdletBinding()]
     param(
@@ -28,34 +19,20 @@ function Invoke-PublishSymbols {
         [string]$SemaphoreMessage,
         [string]$ArtifactName)
 
+    if (!$PdbFiles.Count) {
+        Write-Warning (Get-VstsLocString -Key 'NoFileSelectedForPublishing')
+        return
+    }
+
     [string]$symbolsRspFile = ''
     try {
-        if (!$PdbFiles.Count) {
-            Write-Warning (Get-VstsLocString -Key 'NoFileSelectedForPublishing')
-            return
-        }
-
 # TODO: THIS SHOULD BE RESOLVED IN A DIFFERENT WAY
-        [string]$symstorePath = Assert-VstsPath -LiteralPath "$Agent_HomeDirectory\Symstore\symstore.exe" -PathType Leaf -PassThru
-        # Write a response file (.rsp) to pass to symstore.exe.
-        $symbolsRspFile = [System.IO.Path]::GetTempFileName()
-        $sw = New-Object System.IO.StreamWriter([System.IO.File]::OpenWrite($symbolsRspFile))
-        try {
-            foreach ($pdbFile in $PdbFiles) {
-                if (Test-Path -LiteralPath $PdbFile -PathType Leaf) {
-                    $sw.WriteLine($pdbFile)
-                }
-            }
-        } finally {
-            $sw.Dispose()
-        }
-
-        #
-    } catch {
-        Write-Error -Exception $_
+        [string]$symstorePath = Assert-VstsPath -LiteralPath "$env:Agent_HomeDirectory\Agent\Worker\Tools\Symstore\symstore.exe" -PathType Leaf -PassThru
+        $symbolsRspFile = New-ResponseFile
+        Invoke-PublishSymbolsCore -SymbolsRspFile $symbolsRspFile -SymstorePath $symstorePath -Share $Share -Product $Product -Version $Version -MaximumWaitTime $MaximumWaitTime -MaximumSemaphoreAge $MaximumSemaphoreAge -SemaphoreMessage $SemaphoreMessage -ArtifactName $ArtifactName
     } finally {
         if ($symbolsRspFile) {
-            Remove-Item -LiteralPath $symbolsRspFile
+            [System.IO.File]::Delete($symbolsRspFile)
         }
     }
 }
@@ -103,7 +80,7 @@ function Invoke-PublishSymbolsCore {
                             try {
                                 # Try to clean up the file.
                                 $attemptedDelete = $true
-                                Remove-Item -LiteralPath $semaphoreFile
+                                [System.IO.File]::Delete($semaphoreFile)
                                 Write-Warning (Get-VstsLocString -Key 'SemaphoreFile0WasCleanedUpSuccessfully' -ArgumentList $semaphoreFile)
                                 # The semaphore file was cleaned up.
                                 # Retry the loop.
@@ -234,3 +211,30 @@ function Get-ValidValue {
         Trace-VstsLeavingInvocation $MyInvocation
     }
 }
+
+function New-ResponseFile {
+    [CmdletBinding()]
+    param()
+
+    Trace-VstsEnteringInvocation $MyInvocation
+    try {
+        $symbolsRspFile = [System.IO.Path]::GetTempFileName()
+        $sw = New-Object System.IO.StreamWriter([System.IO.File]::OpenWrite($symbolsRspFile))
+        try {
+            foreach ($pdbFile in $PdbFiles) {
+                if (Test-Path -LiteralPath $PdbFile -PathType Leaf) {
+                    $sw.WriteLine($pdbFile)
+                }
+            }
+        } finally {
+            $sw.Dispose()
+        }
+
+        $symbolsRspFile
+    } finally {
+        Trace-VstsLeavingInvocation $MyInvocation
+    }
+}
+
+#. $PSScriptRoot\CommonWrapperFunctions.ps1
+Export-ModuleMember -Function 'Invoke-PublishSymbols'

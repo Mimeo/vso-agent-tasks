@@ -15,9 +15,6 @@ if ([string]$SourceFolder = (Get-VstsInput -Name 'SourceFolder') -and
 [string]$SymbolsFolder = Get-VstsInput -Name 'SymbolsFolder' -Default (Get-VstsTaskVariable -Name 'Build.SourcesDirectory' -Require)
 [string]$SymbolsArtifactName = Get-VstsInput -Name 'SymbolsArtifactName'
 [bool]$TreatNotIndexedAsWarning = Get-VstsInput -Name 'TreatNotIndexedAsWarning' -AsBool
-if (!$OmitDotSource) {
-    . $PSScriptRoot\IndexHelpers_PSExe.ps1
-}
 
 # Default max wait time.
 $maxWaitTime = if ($SymbolsMaximumWaitTime -gt 0) { [timespan]::FromMinutes($SymbolsMaximumWaitTime) } else { [timespan]::FromHours(2) }
@@ -28,11 +25,11 @@ $maxSemaphoreAge = [timespan]::FromDays(1)
 Write-Verbose "Max semaphore age: $maxSemaphoreAge"
 
 # Get the PDB file paths.
-$pdbFiles = @(Find-VstsFiles -LiteralDirectory $SymbolsFolder -SearchPattern $LegacySearchPattern)
+$pdbFiles = @(Find-VstsFiles -LiteralDirectory $SymbolsFolder -LegacyPattern $SearchPattern)
 Write-Host (Get-VstsLocString -Key "Found0SymbolFilesToIndex" -ArgumentList $pdbFiles.Count)
 
 # Index the sources.
-Import-Module -Name $PSScriptRoot\IndexHelpers\IndexingHelpers.psm1
+Import-Module -Name $PSScriptRoot\IndexHelpers\IndexHelpers.psm1
 Invoke-IndexSources -SymbolsFilePaths $pdbFiles -TreatNotIndexedAsWarning:$TreatNotIndexedAsWarning
 
 # Publish the symbols.

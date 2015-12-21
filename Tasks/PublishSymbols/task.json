@@ -95,6 +95,10 @@
     ],
     "instanceNameFormat": "Publish symbols path: $(SymbolsPath)",
     "execution": {
+        "PowerShellExeTask": {
+            "target": "$(currentDirectory)\\PublishSymbols_PSExe.ps1",
+            "argumentFormat": ""
+        },
         "PowerShell": {
             "target": "$(currentDirectory)\\PublishSymbols.ps1",
             "argumentFormat": "",
