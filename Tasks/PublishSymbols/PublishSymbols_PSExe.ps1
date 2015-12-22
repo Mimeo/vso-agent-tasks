@@ -16,6 +16,7 @@ try {
     [timespan]$SymbolsMaximumWaitTime = if ($SymbolsMaximumWaitTime -gt 0) { [timespan]::FromMinutes($SymbolsMaximumWaitTime) } else { [timespan]::FromHours(2) }
     [string]$SymbolsFolder = Get-VstsInput -Name 'SymbolsFolder' -Default (Get-VstsTaskVariable -Name 'Build.SourcesDirectory' -Require)
     [string]$SymbolsArtifactName = Get-VstsInput -Name 'SymbolsArtifactName'
+    [bool]$SkipIndexing = Get-VstsInput -Name 'SkipIndexing' -AsBool
     [bool]$TreatNotIndexedAsWarning = Get-VstsInput -Name 'TreatNotIndexedAsWarning' -AsBool
 
     # Get the PDB file paths.
@@ -23,8 +24,12 @@ try {
     Write-Host (Get-VstsLocString -Key "Found0SymbolFilesToIndex" -ArgumentList $pdbFiles.Count)
 
     # Index the sources.
-    Import-Module -Name $PSScriptRoot\IndexHelpers\IndexHelpers.psm1
-    Invoke-IndexSources -SymbolsFilePaths $pdbFiles -TreatNotIndexedAsWarning:$TreatNotIndexedAsWarning
+    if ($SkipIndexing) {
+        Write-Host (Get-VstsLocString -Key 'SkippingIndexing')
+    } else {
+        Import-Module -Name $PSScriptRoot\IndexHelpers\IndexHelpers.psm1
+        Invoke-IndexSources -SymbolsFilePaths $pdbFiles -TreatNotIndexedAsWarning:$TreatNotIndexedAsWarning
+    }
 
     # Publish the symbols.
     if ($SymbolsPath) {
