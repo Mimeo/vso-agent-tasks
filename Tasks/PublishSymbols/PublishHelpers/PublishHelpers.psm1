@@ -14,8 +14,6 @@ function Invoke-PublishSymbols {
         [Parameter(Mandatory = $true)]
         [timespan]$MaximumWaitTime,
         [Parameter(Mandatory = $true)]
-        [timespan]$MaximumSemaphoreAge,
-        [Parameter(Mandatory = $true)]
         [string]$SemaphoreMessage,
         [string]$ArtifactName)
 
@@ -53,15 +51,13 @@ function Invoke-PublishSymbolsCore {
         [Parameter(Mandatory = $true)]
         [timespan]$MaximumWaitTime,
         [Parameter(Mandatory = $true)]
-        [timespan]$MaximumSemaphoreAge,
-        [Parameter(Mandatory = $true)]
         [string]$SemaphoreMessage,
         [string]$ArtifactName)
 
     Trace-VstsEnteringInvocation $MyInvocation
     try {
         $MaximumWaitTime = Get-ValidValue -Current $MaximumWaitTime -Minimum ([timespan]::FromMinutes(1)) -Maximum ([timespan]::FromHours(3))
-        $MaximumSemaphoreAge = Get-ValidValue -Current $MaximumSemaphoreAge -Minimum ([timespan]::FromMinutes(30)) -Maximum ([timespan]::FromDays(3))
+        $MaximumSemaphoreAge = [timespan]::FromDays(1)
         $sleepInterval = [timespan]::FromSeconds(10)
         $totalSleepTime = [timespan]::Zero
         $attemptedDelete = $false
@@ -236,5 +232,4 @@ function New-ResponseFile {
     }
 }
 
-#. $PSScriptRoot\CommonWrapperFunctions.ps1
 Export-ModuleMember -Function 'Invoke-PublishSymbols'
