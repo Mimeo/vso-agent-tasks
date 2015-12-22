@@ -177,7 +177,7 @@ function Get-LastTransactionId {
 
     [string]$lastIdFileName = [System.IO.Path]::Combine($Share, '000Admin\lastid.txt')
     if (Test-Path -LiteralPath $lastIdFileName -PathType Leaf) {
-        # There is a sligth chance this file won't exist (due to timing).
+        # There is a slight chance this file won't exist (due to timing).
         # If we hit that case, it will propagate a FileNotFoundException
         # or DirectoryNotFoundException.
         [System.IO.File]::ReadAllText($lastIdFileName).Trim()
