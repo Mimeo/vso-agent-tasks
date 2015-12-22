@@ -103,11 +103,13 @@ function Invoke-DisposeSourceProvider {
     [CmdletBinding()]
     param($Provider)
 
-    Trace-VstsEnteringInvocation $MyInvocation
-    if ($Provider.TfsTeamProjectCollection) {
-        $Provider.TfsTeamProjectCollection.Dispose()
-        $Provider.TfsTeamProjectCollection = $null
+    Trace-VstsEnteringInvocation $MyInvocation -Parameter @( )
+    try {
+        if ($Provider.TfsTeamProjectCollection) {
+            $Provider.TfsTeamProjectCollection.Dispose()
+            $Provider.TfsTeamProjectCollection = $null
+        }
+    } finally {
+        Trace-VstsLeavingInvocation $MyInvocation
     }
-
-    Trace-VstsLeavingInvocation $MyInvocation
 }

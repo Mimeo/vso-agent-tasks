@@ -5,7 +5,7 @@ function Invoke-IndexSources {
         [switch]$TreatNotIndexedAsWarning
     )
 
-    Trace-VstsEnteringInvocation $MyInvocation
+    Trace-VstsEnteringInvocation $MyInvocation -Parameter TreatNotIndexedAsWarning
     try {
         # Validate at least one symbols file.
         if (!$SymbolsFilePaths) {
@@ -43,12 +43,8 @@ function Invoke-IndexSources {
             foreach ($symbolsFilePath in $SymbolsFilePaths) {
                 # Get the source file paths embedded in the symbols file.
                 [string[]]$sourceFilePaths = Get-SourceFilePaths -SymbolsFilePath $symbolsFilePath -SourcesRootPath $provider.SourcesRootPath -TreatNotIndexedAsWarning:$TreatNotIndexedAsWarning
-                if (!$sourceFilePaths) {
+                if (!$sourceFilePaths.Count) {
                     continue
-                }
-
-                foreach ($sourceFile in $sourceFilePaths) {
-                    Write-Verbose "Source file: $sourceFile"
                 }
 
                 # Get the content for the source server INI file.

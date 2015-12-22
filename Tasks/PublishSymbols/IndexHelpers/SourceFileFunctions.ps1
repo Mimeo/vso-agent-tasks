@@ -6,8 +6,7 @@ function Get-SourceFilePaths {
         [switch]$TreatNotIndexedAsWarning
     )
 
-    Trace-VstsEnteringInvocation $MyInvocation
-    Assert-VstsPath -LiteralPath $SymbolsFilePath -PathType Leaf # Validate the symbols file exists.
+    Trace-VstsEnteringInvocation $MyInvocation -Parameter SymbolsFilePath
 
     # Get the referenced source file paths.
     $sourceFilePaths = @(Get-DbghelpSourceFilePaths -SymbolsFilePath $SymbolsFilePath)
@@ -27,6 +26,7 @@ function Get-SourceFilePaths {
     $SourcesRootPath = $SourcesRootPath.TrimEnd('\')
     $SourcesRootPath = "$SourcesRootPath\"
 
+    $foundPaths = New-Object System.Collections.Generic.List[string]
     [bool]$isPreambleWritten = $false
     foreach ($sourceFilePath in $sourceFilePaths) {
         # Trim the source file path.
@@ -79,9 +79,11 @@ function Get-SourceFilePaths {
             continue
         }
 
-        # Output the source file path.
-        $sourceFilePath
+        # Add the source file path.
+        $foundPaths.Add($sourceFilePath)
     }
 
+    Trace-VstsPath $foundPaths
+    $foundPaths
     Trace-VstsLeavingInvocation $MyInvocation
 }
