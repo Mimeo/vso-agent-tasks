@@ -41,6 +41,11 @@ function Invoke-IndexSources {
 
             # Index the source files
             foreach ($symbolsFilePath in $SymbolsFilePaths) {
+                if (!$symbolsFilePath.EndsWith('.pdb', [System.StringComparison]::OrdinalIgnoreCase)) {
+                    Write-Verbose "Skipping: $symbolsFilePath"
+                    continue
+                }
+
                 # Get the source file paths embedded in the symbols file.
                 [string[]]$sourceFilePaths = Get-SourceFilePaths -SymbolsFilePath $symbolsFilePath -SourcesRootPath $provider.SourcesRootPath -TreatNotIndexedAsWarning:$TreatNotIndexedAsWarning
                 if (!$sourceFilePaths.Count) {

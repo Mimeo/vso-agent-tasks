@@ -21,7 +21,7 @@ try {
 
     # Get the PDB file paths.
     $pdbFiles = @(Find-VstsFiles -LiteralDirectory $SymbolsFolder -LegacyPattern $SearchPattern)
-    Write-Host (Get-VstsLocString -Key "Found0SymbolFilesToIndex" -ArgumentList $pdbFiles.Count)
+    Write-Host (Get-VstsLocString -Key "Found0Files" -ArgumentList $pdbFiles.Count)
 
     # Index the sources.
     if ($SkipIndexing) {
