@@ -27,7 +27,7 @@ function Invoke-PublishSymbols {
 # TODO: THIS SHOULD BE RESOLVED IN A DIFFERENT WAY
         [string]$symstorePath = Assert-VstsPath -LiteralPath "$env:Agent_HomeDirectory\Agent\Worker\Tools\Symstore\symstore.exe" -PathType Leaf -PassThru
         $symbolsRspFile = New-ResponseFile
-        Invoke-PublishSymbolsCore -SymbolsRspFile $symbolsRspFile -SymstorePath $symstorePath -Share $Share -Product $Product -Version $Version -MaximumWaitTime $MaximumWaitTime -MaximumSemaphoreAge $MaximumSemaphoreAge -SemaphoreMessage $SemaphoreMessage -ArtifactName $ArtifactName
+        Invoke-PublishSymbolsCore -SymbolsRspFile $symbolsRspFile -SymstorePath $symstorePath -Share $Share -Product $Product -Version $Version -MaximumWaitTime $MaximumWaitTime -SemaphoreMessage $SemaphoreMessage -ArtifactName $ArtifactName
     } finally {
         if ($symbolsRspFile) {
             [System.IO.File]::Delete($symbolsRspFile)
