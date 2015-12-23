@@ -90,6 +90,7 @@ function Select-MSBuildLocation {
         [string]$Method,
         [string]$Location,
         [string]$Version,
+        [switch]$RequireVersion,
         [string]$Architecture
     )
 
@@ -120,21 +121,22 @@ function Select-MSBuildLocation {
             Write-Verbose "Searching for MSBuild version: $Version"
             $Location = Get-MSBuildLocation -Version $Version -Architecture $Architecture
 
-            # Warn if not found.
-            if (!$Location) {
+            # Warn if not found and the preferred version is not required.
+            if (!$Location -and !$RequireVersion) {
                 Write-Warning (Get-LocalizedString -Key 'Unable to find MSBuild: Version = {0}, Architecture = {1}. Looking for the latest version.' -ArgumentList $Version, $Architecture)
             }
         }
 
         # Look for the latest version of MSBuild.
-        if (!$Location) {
+        if (!$Location -and ("$Version".ToUpperInvariant() -eq 'LATEST' -or !$RequireVersion)) {
             Write-Verbose 'Searching for latest MSBuild version.'
             $Location = Get-MSBuildLocation -Version '' -Architecture $Architecture
 
-            # Throw if not found.
-            if (!$Location) {
-                throw (Get-LocalizedString -Key 'MSBuild not found: Version = {0}, Architecture = {1}. Try a different version/architecture combination, specify a location, or install the appropriate MSBuild version/architecture.' -ArgumentList $Version, $Architecture)
-            }
+        }
+
+        # Throw if not found.
+        if (!$Location) {
+            throw (Get-LocalizedString -Key 'MSBuild not found: Version = {0}, Architecture = {1}. Try a different version/architecture combination, specify a location, or install the appropriate MSBuild version/architecture.' -ArgumentList $Version, $Architecture)
         }
 
         Write-Verbose "MSBuild location = $Location"

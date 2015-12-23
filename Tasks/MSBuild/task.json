@@ -12,7 +12,7 @@
     "version": {
         "Major": 1,
         "Minor": 0,
-        "Patch": 16
+        "Patch": 17
     },
     "demands" : [
         "msbuild"
@@ -56,19 +56,21 @@
             "required":false,
             "helpMarkDown": "Additional arguments passed to MSBuild."
         },
-        { 
+        {
             "name": "clean", 
             "type": "boolean", 
             "label": "Clean", 
             "defaultValue": "false", 
-            "required": false 
+            "required": false,
+            "helpMarkDown": "Run a clean build (/t:clean) prior to the build."
         },
         { 
             "name": "restoreNugetPackages", 
             "type": "boolean", 
             "label": "Restore NuGet Packages", 
             "defaultValue": "true", 
-            "required": false 
+            "required": false,
+            "helpMarkDown": "Run NuGet restore prior to the build."
         },
         { 
             "name": "logProjectEvents", 
@@ -105,6 +107,16 @@
                 "12.0":"MSBuild 12.0",
                 "4.0":"MSBuild 4.0"
             }
+        },
+        {
+            "name": "requireMSBuildVersion",
+            "type": "boolean",
+            "label": "Require MSBuild Version",
+            "required": false,
+            "groupName":"advanced",
+            "defaultValue": "false",
+            "helpMarkDown": "Fail if the preferred version of MSBuild cannot be found.",
+            "visibleRule": "msbuildLocationMethod = version"
         },
         { 
             "name": "msbuildArchitecture", 
