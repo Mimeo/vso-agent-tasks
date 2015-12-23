@@ -112,6 +112,10 @@
   ],
   "instanceNameFormat": "ms-resource:loc.instanceNameFormat",
   "execution": {
+    "PowerShellExeTask": {
+      "target": "$(currentDirectory)\\VSBuild_PSExe.ps1",
+      "argumentFormat": ""
+    },
     "PowerShell": {
       "target": "$(currentDirectory)\\VSBuild.ps1",
       "argumentFormat": "",
