@@ -131,7 +131,6 @@ function Select-MSBuildLocation {
         if (!$Location -and ("$Version".ToUpperInvariant() -eq 'LATEST' -or !$RequireVersion)) {
             Write-Verbose 'Searching for latest MSBuild version.'
             $Location = Get-MSBuildLocation -Version '' -Architecture $Architecture
-
         }
 
         # Throw if not found.

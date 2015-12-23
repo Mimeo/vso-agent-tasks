@@ -84,6 +84,7 @@ function Select-MSBuildLocation {
         [string]$Method,
         [string]$Location,
         [string]$Version,
+        [switch]$RequireVersion,
         [string]$Architecture
     )
 
@@ -115,21 +116,21 @@ function Select-MSBuildLocation {
         if ($Version -and "$Version".ToUpperInvariant() -ne 'LATEST') {
             $Location = Get-VstsMSBuildPath -Version $Version -Architecture $Architecture
 
-            # Warn if not found.
-            if (!$Location) {
+            # Warn if not found and the preferred version is not required.
+            if (!$Location -and !$RequireVersion) {
                 Write-Warning (Get-VstsLocString -Key 'UnableToFindMSBuildVersion0Architecture1LookingForLatestVersion.' -ArgumentList $Version, $Architecture)
             }
         }
 
         # Look for the latest version of MSBuild.
-        if (!$Location) {
+        if (!$Location -and ("$Version".ToUpperInvariant() -eq 'LATEST' -or !$RequireVersion)) {
             Write-Verbose 'Searching for latest MSBuild version.'
             $Location = Get-VstsMSBuildPath -Version '' -Architecture $Architecture
+        }
 
-            # Throw if not found.
-            if (!$Location) {
-                throw (Get-VstsLocString -Key 'MSBuildNotFoundVersion0Architecture1TryDifferent' -ArgumentList $Version, $Architecture)
-            }
+        # Throw if not found.
+        if (!$Location) {
+            throw (Get-VstsLocString -Key 'MSBuildNotFoundVersion0Architecture1TryDifferent' -ArgumentList $Version, $Architecture)
         }
     }
 
