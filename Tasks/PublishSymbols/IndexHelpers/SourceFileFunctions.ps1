@@ -1,8 +1,10 @@
 function Get-SourceFilePaths {
     [CmdletBinding()]
     param(
-        [string]$SymbolsFilePath = $(throw 'Missing SymbolsFilePath'),
-        [string]$SourcesRootPath = $(throw 'Missing SourcesRootPath'),
+        [Parameter(Mandatory = $true)]
+        [string]$SymbolsFilePath,
+        [Parameter(Mandatory = $true)]
+        [string]$SourcesRootPath,
         [switch]$TreatNotIndexedAsWarning
     )
 
@@ -26,63 +28,44 @@ function Get-SourceFilePaths {
     $SourcesRootPath = $SourcesRootPath.TrimEnd('\')
     $SourcesRootPath = "$SourcesRootPath\"
 
+    $notUnderSourcesRootPaths = New-Object System.Collections.Generic.List[string]
+    $notFoundPaths = New-Object System.Collections.Generic.List[string]
     $foundPaths = New-Object System.Collections.Generic.List[string]
-    [bool]$isPreambleWritten = $false
     foreach ($sourceFilePath in $sourceFilePaths) {
-        # Trim the source file path.
         $sourceFilePath = $sourceFilePath.Trim()
-
-        # Check whether the source file is under sources root.
-        [bool]$isUnderSourcesRoot = $sourceFilePath.StartsWith(
-            $SourcesRootPath,
-            [System.StringComparison]::OrdinalIgnoreCase)
-
-        # Check whether the source file exists.
-        [bool]$isFound = $isUnderSourcesRoot -and (Test-Path -LiteralPath $sourceFilePath -PathType Leaf)
-
-        # Warn if issues.
-        if (!$isUnderSourcesRoot -or !$isFound) {
-            # Write the warning preamble if not already written once.
-            if (!$isPreambleWritten) {
-                [string]$message = Get-VstsLocString -Key 'UnableToIndexOneOrMoreSourceFilesForSymbolsFile0' -ArgumentList $SymbolsFilePath
-                if ($TreatNotIndexedAsWarning) {
-                    Write-Warning $message
-                } else  {
-                    Write-Host $message
-                }
-            }
-
-            # Set the flag indicating that the preamble warning has been printed.
-            $isPreambleWritten = $true
-
-            if (!$isUnderSourcesRoot) {
-                # Warn that the source file path is not under the sources root.
-                [string]$message = Get-VstsLocString -Key 'SourceFileNotUnderSourcesRootSourceFile0SourcesRootDirectory1' -ArgumentList $sourceFilePath, $SourcesRootPath
-                if ($TreatNotIndexedAsWarning) {
-                    Write-Warning $message
-                } else {
-                    Write-Host $message
-                }
-            } elseif (!$isFound) {
-                # Warn that the source file does not exist.
-                [string]$message = Get-VstsLocString -Key 'SourceFileNotFound0' -ArgumentList $sourceFilePath
-                if ($TreatNotIndexedAsWarning) {
-                    Write-Warning $message
-                } else {
-                    Write-Host $message
-                }
-            } else {
-                throw 'Not supported' # Execution should never reach here.
-            }
-
-            # Prevent the source file path from being output.
-            continue
+        if (!$sourceFilePath.StartsWith($SourcesRootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+            # The source file path is not under sources root.
+            $notUnderSourcesRootPaths.Add($sourceFilePath)
+        } elseif (!(Test-Path -LiteralPath $sourceFilePath -PathType Leaf)) {
+            # The source file does not exist.
+            $notFoundPaths.Add($sourceFilePath)
+        } else {
+            # The source file was found.
+            $foundPaths.Add($sourceFilePath)
         }
-
-        # Add the source file path.
-        $foundPaths.Add($sourceFilePath)
     }
 
+    # Warn if issues.
+    if ($notUnderSourcesRootPaths.Count -or $notFoundPaths.Count) {
+        [string]$message = Get-VstsLocString -Key 'UnableToIndexOneOrMoreSourceFilesForSymbolsFile0' -ArgumentList $SymbolsFilePath
+        if ($TreatNotIndexedAsWarning) {
+            Write-Warning $message
+        } else  {
+            Write-Host $message
+        }
+
+        if ($notUnderSourcesRootPaths.Count) {
+            Write-Verbose "One or more source files not under sources root directory: $SourcesRootPath"
+            Trace-VstsPath -Path $notUnderSourcesRootPaths
+        }
+
+        if ($notFoundPaths.Count) {
+            Write-Verbose "One or more source files not found."
+            Trace-VstsPath -Path $notFoundPaths
+        }
+    }
+
+    Write-Verbose "Found source files:"
     Trace-VstsPath $foundPaths
     $foundPaths
     Trace-VstsLeavingInvocation $MyInvocation

@@ -159,6 +159,17 @@ function Remove-DbghelpLibrary {
 ########################################
 # Wrapper functions.
 ########################################
+function Get-CurrentProcess {
+    [CmdletBinding()]
+    param()
+
+    [System.Diagnostics.Process]::GetCurrentProcess()
+}
+
+function Get-LastWin32Error {
+    [System.Runtime.InteropServices.Marshal]::GetLastWin32Error()
+}
+
 function Invoke-LoadLibrary {
     [CmdletBinding()]
     param($LiteralPath)

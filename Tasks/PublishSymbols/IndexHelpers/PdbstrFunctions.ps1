@@ -75,3 +75,17 @@ function Add-SourceServerStream {
         Trace-VstsLeavingInvocation $MyInvocation
     }
 }
+
+########################################
+# Wrapper functions.
+########################################
+function Get-TempFileName {
+    [System.IO.Path]::GetTempFileName()
+}
+
+function Write-AllText {
+    [CmdletBinding()]
+    param([string]$Path, [string]$Content)
+
+    [System.IO.File]::WriteAllText($Path, $Content)
+}

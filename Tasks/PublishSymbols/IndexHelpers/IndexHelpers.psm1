@@ -1,7 +1,6 @@
 [CmdletBinding()]
 param()
 
-. $PSScriptRoot\CommonWrapperFunctions.ps1
 . $PSScriptRoot\DbghelpFunctions.ps1
 . $PSScriptRoot\IndexFunctions.ps1
 . $PSScriptRoot\PdbstrFunctions.ps1
